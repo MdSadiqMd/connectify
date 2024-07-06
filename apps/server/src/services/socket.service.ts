@@ -1,5 +1,18 @@
 import { Server } from "socket.io";
 import logger from "../config/logger.config";
+import { Redis } from "ioredis";
+import config from "../config/server.config";
+
+const pub = new Redis({
+    host: config.REDIS_HOST,
+    port: Number(config.REDIS_PORT),
+    maxRetriesPerRequest: null
+});
+const sub = new Redis({
+    host: config.REDIS_HOST,
+    port: Number(config.REDIS_PORT),
+    maxRetriesPerRequest: null
+});
 
 class SocketService {
     private _io: Server;
@@ -12,6 +25,7 @@ class SocketService {
                 origin: "*"
             }
         });
+        sub.subscribe("MESSAGES");
     }
 
     public initListeners() {
@@ -20,7 +34,14 @@ class SocketService {
             logger.info(`New Socket Connected: ${socket.id}`);
             socket.on(`event:message`, async ({ message }: { message: string; }) => {
                 logger.info(`New Message Received: ${message}`);
+                await pub.publish('MESSAGES', JSON.stringify({ message: message }));
                 io.emit('event:message', { message });
+            });
+
+            sub.on('message', (channel, message) => {
+                if (channel === 'MESSAGES') {
+                    io.emit("message", message);
+                }
             });
 
             socket.on('disconnect', () => {
