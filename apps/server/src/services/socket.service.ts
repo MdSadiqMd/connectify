@@ -3,6 +3,7 @@ import logger from "../config/logger.config";
 
 class SocketService {
     private _io: Server;
+
     constructor() {
         logger.info(`Socket IO Init`);
         this._io = new Server({
@@ -17,9 +18,13 @@ class SocketService {
         const io = this.io;
         io.on('connect', (socket) => {
             logger.info(`New Socket Connected: ${socket.id}`);
-
             socket.on(`event:message`, async ({ message }: { message: string; }) => {
                 logger.info(`New Message Received: ${message}`);
+                io.emit('event:message', { message });
+            });
+
+            socket.on('disconnect', () => {
+                logger.info(`Socket Disconnected: ${socket.id}`);
             });
         });
     }
