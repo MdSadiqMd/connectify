@@ -7,7 +7,7 @@ interface SocketProviderProps {
 }
 
 interface ISocketContext {
-    sendMessage: (msg: string) => any;
+    sendMessage: (msg: string) => void;
     messages: string[];
 }
 
@@ -22,8 +22,8 @@ export const useSocket = () => {
 };
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
-    const [socket, setSocket] = useState<Socket>();
-    const [messages, setMessages] = useState<string[]>();
+    const [socket, setSocket] = useState<Socket | undefined>();
+    const [messages, setMessages] = useState<string[]>([]); // Initialize as an empty array
 
     const sendMessage: ISocketContext["sendMessage"] = useCallback((msg) => {
         console.log('Send Message: ', msg);
@@ -33,7 +33,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }, [socket]);
 
     const onMessageReceived = useCallback((msg: string) => {
-        logger.info(`Message from server: ${msg}`);
+        console.log(`Message from server: ${msg}`);
         const { message } = JSON.parse(msg) as { message: string; };
         setMessages(prev => [...prev, message]);
     }, []);
@@ -47,7 +47,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             _socket.off('message', onMessageReceived);
             setSocket(undefined);
         };
-    }, []);
+    }, [onMessageReceived]);
 
     return (
         <socketContext.Provider value={{ sendMessage, messages }}>
