@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import logger from "../config/logger.config";
 import { Redis } from "ioredis";
 import config from "../config/server.config";
+import prismaClient from "./prisma.service";
 
 const pub = new Redis({
     host: config.REDIS_HOST,
@@ -38,9 +39,14 @@ class SocketService {
                 io.emit('event:message', { message });
             });
 
-            sub.on('message', (channel, message) => {
+            sub.on('message', async (channel, message) => {
                 if (channel === 'MESSAGES') {
                     io.emit("message", message);
+                    await prismaClient.message.create({
+                        data: {
+                            text: message
+                        }
+                    });
                 }
             });
 
