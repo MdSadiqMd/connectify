@@ -18,7 +18,7 @@ const kafka = new Kafka({
     }
 });
 
-let producer: null | Producer = null;
+let producer: Producer | null = null;
 
 export async function createProducer() {
     if (producer) {
@@ -50,7 +50,7 @@ export async function startConsumer() {
             try {
                 await prismaClient.message.create({
                     data: {
-                        text: message.value?.toString()
+                        text: message.value.toString()
                     }
                 });
             } catch (error) {

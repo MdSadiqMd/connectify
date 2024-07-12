@@ -2,7 +2,6 @@ import { Server } from "socket.io";
 import logger from "../config/logger.config";
 import { Redis } from "ioredis";
 import config from "../config/server.config";
-import prismaClient from "./prisma.service";
 import { produceMessage } from "./kafka.service";
 
 const pub = new Redis({
@@ -36,7 +35,7 @@ class SocketService {
             logger.info(`New Socket Connected: ${socket.id}`);
             socket.on(`event:message`, async ({ message }: { message: string; }) => {
                 logger.info(`New Message Received: ${message}`);
-                await pub.publish('MESSAGES', JSON.stringify({ message: message }));
+                await pub.publish('MESSAGES', JSON.stringify({ message }));
                 io.emit('event:message', { message });
             });
 
@@ -46,11 +45,6 @@ class SocketService {
                     io.emit("message", message);
                     await produceMessage(message);
                     logger.info(`Message Produced in Kafka - ${message}`);
-                    /* await prismaClient.message.create({
-                        data: {
-                            text: message
-                        }
-                    }); */
                 }
             });
 
