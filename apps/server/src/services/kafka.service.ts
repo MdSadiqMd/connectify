@@ -40,7 +40,7 @@ export async function produceMessage(message: string) {
         });
         return true;
     } catch (error) {
-        logger.error(`Failed to produce message: ${error.message}`);
+        logger.error(`Failed to produce message: ${error}`);
         producer = null;
         return false;
     }
@@ -61,7 +61,7 @@ export async function startConsumer() {
                     }
                 });
             } catch (error) {
-                logger.error(`Error in saving message in DB: ${error.message}`);
+                logger.error(`Error in saving message in DB: ${error}`);
                 pause();
                 setTimeout(() => {
                     consumer.resume([{ topic: 'MESSAGES' }]);
