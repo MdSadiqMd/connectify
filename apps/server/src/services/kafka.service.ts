@@ -1,4 +1,4 @@
-import { Kafka, Producer } from 'kafkajs';
+import { Kafka, Producer, logLevel } from 'kafkajs';
 import fs from 'fs';
 import path from 'path';
 
@@ -15,7 +15,8 @@ const kafka = new Kafka({
         username: config.KAFKA_USERNAME,
         password: config.KAFKA_PASSWORD,
         mechanism: "plain",
-    }
+    },
+    logLevel: logLevel.ERROR,
 });
 
 let producer: Producer | null = null;
@@ -31,12 +32,18 @@ export async function createProducer() {
 }
 
 export async function produceMessage(message: string) {
-    const producer = await createProducer();
-    await producer.send({
-        messages: [{ key: `message-${Date.now()}`, value: message }],
-        topic: 'MESSAGES'
-    });
-    return true;
+    try {
+        const producer = await createProducer();
+        await producer.send({
+            messages: [{ key: `message-${Date.now()}`, value: message }],
+            topic: 'MESSAGES'
+        });
+        return true;
+    } catch (error) {
+        logger.error(`Failed to produce message: ${error.message}`);
+        producer = null;
+        return false;
+    }
 }
 
 export async function startConsumer() {
@@ -54,7 +61,7 @@ export async function startConsumer() {
                     }
                 });
             } catch (error) {
-                logger.error(`Error in saving message in DB`);
+                logger.error(`Error in saving message in DB: ${error.message}`);
                 pause();
                 setTimeout(() => {
                     consumer.resume([{ topic: 'MESSAGES' }]);
