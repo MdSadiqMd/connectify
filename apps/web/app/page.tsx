@@ -1,28 +1,40 @@
-"use client";
-import { useState } from "react";
-import { useSocket } from "../context/SocketProvider";
+'use client';
+import { useRef } from 'react';
+import { useSocket } from '../context/SocketProvider';
 
 export default function Page() {
   const { sendMessage, messages } = useSocket();
-  const [message, setMessage] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSendMessage = () => {
+    if (inputRef.current) {
+      const message = inputRef.current.value;
+      if (message.trim()) {
+        sendMessage(message);
+        inputRef.current.value = '';
+      }
+    }
+  };
 
   return (
     <div>
       <div>
         <input
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Message..."
+          ref={inputRef}
+          placeholder='Type something'
         />
-        <button
-          onClick={() => sendMessage(message)}
-        >
+        <button onClick={handleSendMessage}>
           Send
         </button>
       </div>
       <div>
-        {messages.map((e) => (
-          <li>{e}</li>
-        ))}
+        <ul>
+          {
+            messages.map((msg, index) => (
+              <li key={index}>{msg}</li>
+            ))
+          }
+        </ul>
       </div>
     </div>
   );
