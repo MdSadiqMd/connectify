@@ -1,7 +1,10 @@
 import { Kafka, Producer } from 'kafkajs';
-import config from '../config/server.config';
 import fs from 'fs';
 import path from 'path';
+
+import config from '../config/server.config';
+import logger from '../config/logger.config';
+import prismaClient from './prisma.service';
 
 const kafka = new Kafka({
     brokers: [config.KAFKA_HOST],
@@ -34,6 +37,31 @@ export async function produceMessage(message: string) {
         topic: 'MESSAGES'
     });
     return true;
+}
+
+export async function startConsumer() {
+    const consumer = kafka.consumer({ groupId: 'default' });
+    await consumer.connect();
+    await consumer.subscribe({ topic: 'MESSAGES', fromBeginning: true });
+    await consumer.run({
+        autoCommit: true,
+        eachMessage: async ({ message, pause }) => {
+            if (!message.value) return;
+            try {
+                await prismaClient.message.create({
+                    data: {
+                        text: message.value?.toString()
+                    }
+                });
+            } catch (error) {
+                logger.error(`Error in saving message in DB`);
+                pause();
+                setTimeout(() => {
+                    consumer.resume([{ topic: 'MESSAGES' }]);
+                }, 60 * 1000);
+            }
+        }
+    });
 }
 
 export default kafka;
