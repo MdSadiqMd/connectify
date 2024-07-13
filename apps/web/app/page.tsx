@@ -21,7 +21,7 @@ export default function Page() {
       <div>
         <input
           ref={inputRef}
-          placeholder='Type something'
+          placeholder='Type Message...'
         />
         <button onClick={handleSendMessage}>
           Send
